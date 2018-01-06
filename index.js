@@ -4,7 +4,18 @@ const _ = require('lodash')
 const milanuncios = require('./websites/milanuncios')
 
 const nightmare = Nightmare({ 
-  show: true 
+  show: true,
+  /*
+  openDevTools: {
+    mode: 'right'
+  }
+  */
+})
+
+Nightmare.action('scrollIntoView', function (selector, done) {
+  this.evaluate_now((selector) => {
+    document.querySelector(selector).scrollIntoView(true)
+  }, done, selector)
 })
 
 const searchTerm = 'iveco daily'
@@ -15,6 +26,8 @@ const fetchDataFromPages = (data, page) => {
 
   return nightmare
     .goto(url)
+    .scrollIntoView('.adlist-paginator-box')
+    .wait(5000)
     .evaluate(milanuncios.getPageData)
     .then(({ lastPage, pageData }) => {
       if (lastPage) { 
@@ -35,17 +48,18 @@ const getData = (website) => {
     .click('#vamos')
     .wait('#searchAdBoxAdCounter')
 
-    .then(() => fetchDataFromPages([], 1))
+    .then(() => fetchDataFromPages([], 4))
 
     .then((results) => {
-      const filteredData = results.filter(item => item.kilometers && item.price)
+      console.log(results)
+      const filteredData = results.filter(item => item.kilometers && item.price && item.images)
       const finalData = _.uniqWith(filteredData, _.isEqual)
       console.log('final data', finalData, finalData.length)
       return finalData
     })
 
     .catch((err) => {
-      console.error('Search failed:', err);
+      console.error(err);
     })
 }
 
