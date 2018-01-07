@@ -1,8 +1,7 @@
 const firebase = require('firebase')
-const bot = require('./bot')
-const milanuncios = require('./websites/milanuncios')
+const milanuncios = require('./bots/milanuncios')
 
-const scrapper = bot(milanuncios, 'iveco daily')
+const scrapper = milanuncios('iveco daily')
 
 const config = {
   apiKey: "AIzaSyBFOox36Tc6-zSxs83A6LBlXr6sctChwz8",

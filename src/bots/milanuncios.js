@@ -1,8 +1,18 @@
-const url = 'https://www.milanuncios.com/furgonetas-de-segunda-mano'
+const Nightmare = require('nightmare')
+const _ = require('lodash')
+const { setPage, setVans } = require('../db')
 
-const formatSearch = (str) => {
-  return str.toLowerCase().replace(' ', '-')
-}
+const nightmare = Nightmare({ 
+  show: true
+})
+
+Nightmare.action('scrollIntoView', function (selector, done) {
+  this.evaluate_now((selector) => {
+    document.querySelector(selector).scrollIntoView(true)
+  }, done, selector)
+})
+
+const url = 'https://www.milanuncios.com/furgonetas-de-segunda-mano'
 
 const getPageData = () => {
 
@@ -84,11 +94,56 @@ const getPageData = () => {
       }, {})
     })
   }
-
 }
 
-module.exports = {
-  url,
-  formatSearch,
-  getPageData,
+const fetchDataFromPages = (data, page, formattedSearch) => {
+  const pageUrl = `${url}/${formattedSearch}.htm?demanda=n&pagina=${page}`
+
+  return nightmare
+    .goto(pageUrl)
+    .scrollIntoView('.adlist-paginator-box')
+    .wait(3000)
+    .evaluate(getPageData)
+    .then(async ({ lastPage, pageData }) => {
+
+      if (lastPage) {
+        nightmare.end()
+      } else {
+        await setVans(filterData(pageData))
+        await setPage(page)
+        console.log(`vans for page ${page} have been saved...`)
+
+        return fetchDataFromPages([...data, ...pageData], page + 1, formattedSearch)
+      }
+
+    })
+}
+
+const filterVans = (van) => {
+  return van.kilometers && van.price && van.images
+}
+
+const filterData = (data) => {
+  return _.uniqWith(data.filter(filterVans), _.isEqual)
+}
+
+module.exports = (search) => {
+  const formattedSearch =  search.toLowerCase().replace(' ', '-')
+
+  return async () => {
+    return nightmare
+      .useragent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.108 Safari/537.36')
+      .goto(url)
+      .wait('#vamos')
+      
+      .insert('#palabras', search)
+      .click('#vamos')
+      .wait('#searchAdBoxAdCounter')
+
+      .then(() => fetchDataFromPages([], 32, formattedSearch))
+
+      .catch((err) => {
+        console.error(err);
+      })
+  }
 }
