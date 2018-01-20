@@ -16,11 +16,16 @@ const url = 'https://www.milanuncios.com/furgonetas-de-segunda-mano'
 
 const getPageData = () => {
 
-  const innerText = (el) => el.innerText
+  const innerText = (el) => el.innerText.trim()
   const getNumeric = (str) => str.replace(/\D/g, '')
   const noop = (str) => str
 
   const dataFields = {
+    id: {
+      selector: '.aditem-header > div.x5',
+      getData: innerText,
+      format: noop
+    },
     price: {
       selector: '.aditem-price',
       getData: innerText,
@@ -106,16 +111,13 @@ const fetchDataFromPages = (data, page, formattedSearch) => {
     .evaluate(getPageData)
     .then(async ({ lastPage, pageData }) => {
 
-      if (lastPage) {
-        nightmare.end()
-      } else {
+      if (lastPage === false) {
         await setVans(filterData(pageData))
         await setPage(page)
         console.log(`vans for page ${page} have been saved...`)
 
         return fetchDataFromPages([...data, ...pageData], page + 1, formattedSearch)
       }
-
     })
 }
 
@@ -140,7 +142,7 @@ module.exports = (search) => {
       .click('#vamos')
       .wait('#searchAdBoxAdCounter')
 
-      .then(() => fetchDataFromPages([], 32, formattedSearch))
+      .then(() => fetchDataFromPages([], 1, formattedSearch))
 
       .catch((err) => {
         console.error(err);

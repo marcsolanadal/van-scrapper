@@ -21,6 +21,8 @@ const initializeUser = async (user, scrape) => {
 
     await firebase.auth().signOut()
     console.log(`User ${uid} logged out...`)
+
+    process.exit()
   }
 }
 

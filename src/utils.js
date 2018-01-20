@@ -5,14 +5,18 @@ const arrayToObject = (arr) => {
   }, {})
 }
 
-const offsetKeys = (obj, offset) => {
-  return Object.keys(obj).reduce((acc, key) => {
-    acc[parseInt(key) + offset] = obj[key]
-    return acc
+const normalizeById = (arr) => {
+  return arr.reduce((acc, curr) => {
+    return {
+      ...acc,
+      [curr.id]: {
+        ...curr
+      }
+    }
   }, {})
 }
 
 module.exports = {
   arrayToObject,
-  offsetKeys
+  normalizeById
 }
